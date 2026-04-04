@@ -9,16 +9,16 @@ export interface Meta {
 
 const DISCLAIMER =
   'This data is provided for informational purposes only. It does not constitute professional ' +
-  'agricultural advice. Always consult a qualified agronomist or FACTS-qualified advisor before ' +
-  'making nutrient management decisions. Data sourced from AHDB RB209, DEFRA, and other UK ' +
-  'government publications under Open Government Licence.';
+  'food safety or legal advice. Always consult Livsmedelsverket (Swedish Food Agency) or a ' +
+  'qualified food safety advisor before making compliance decisions. Data sourced from ' +
+  'Livsmedelsverket, Jordbruksverket, and EU regulations.';
 
 export function buildMeta(overrides?: Partial<Meta>): Meta {
   return {
     disclaimer: DISCLAIMER,
     data_age: overrides?.data_age ?? 'unknown',
-    source_url: overrides?.source_url ?? 'https://ahdb.org.uk/nutrient-management-guide',
-    copyright: 'Data: Crown Copyright and AHDB. Server: Apache-2.0 Ansvar Systems.',
+    source_url: overrides?.source_url ?? 'https://www.livsmedelsverket.se/',
+    copyright: 'Data: Swedish Food Agency (Livsmedelsverket). Server: Apache-2.0 Ansvar Systems.',
     server: 'se-food-safety-mcp',
     version: '0.1.0',
     ...overrides,
@@ -33,7 +33,7 @@ export function buildStalenessWarning(publishedDate: string): string | undefined
   );
 
   if (daysSincePublished > 14) {
-    return `Price data is ${daysSincePublished} days old (published ${publishedDate}). Check current market rates before making decisions.`;
+    return `Data is ${daysSincePublished} days old (published ${publishedDate}). Check current regulations before making decisions.`;
   }
   return undefined;
 }

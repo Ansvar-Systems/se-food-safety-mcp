@@ -1,8 +1,8 @@
 {
   "name": "@ansvar/se-food-safety-mcp",
-  "mcpName": "io.github.ansvar-systems/uk-crop-nutrients",
+  "mcpName": "io.github.ansvar-systems/se-food-safety",
   "version": "0.1.0",
-  "description": "UK crop nutrient recommendations via MCP -- RB209 data, soil types, NPK planning, commodity prices",
+  "description": "Swedish food safety regulations via MCP -- product requirements, labelling, hygiene, assurance schemes, traceability, raw milk rules",
   "type": "module",
   "main": "dist/server.js",
   "bin": {
@@ -25,7 +25,7 @@
     "freshness:check": "tsx scripts/check-freshness.ts",
     "coverage:update": "tsx scripts/update-coverage.ts"
   },
-  "keywords": ["mcp", "agriculture", "nutrients", "rb209", "farming", "crop-science"],
+  "keywords": ["mcp", "food-safety", "sweden", "livsmedelsverket", "hygiene", "labelling", "haccp"],
   "author": "Ansvar Systems <info@ansvar.eu>",
   "license": "Apache-2.0",
   "repository": {

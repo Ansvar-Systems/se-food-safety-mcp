@@ -8,23 +8,27 @@ import { writeFileSync } from 'fs';
 
 const db = createDatabase();
 
-const crops = db.get<{ c: number }>('SELECT count(*) as c FROM crops')!.c;
-const soils = db.get<{ c: number }>('SELECT count(*) as c FROM soil_types')!.c;
-const recs = db.get<{ c: number }>('SELECT count(*) as c FROM nutrient_recommendations')!.c;
-const prices = db.get<{ c: number }>('SELECT count(*) as c FROM commodity_prices')!.c;
+const products = db.get<{ c: number }>('SELECT count(*) as c FROM products')!.c;
+const requirements = db.get<{ c: number }>('SELECT count(*) as c FROM product_requirements')!.c;
+const schemes = db.get<{ c: number }>('SELECT count(*) as c FROM assurance_schemes')!.c;
+const hygiene = db.get<{ c: number }>('SELECT count(*) as c FROM hygiene_rules')!.c;
+const rawMilk = db.get<{ c: number }>('SELECT count(*) as c FROM raw_milk_rules')!.c;
+const labelling = db.get<{ c: number }>('SELECT count(*) as c FROM labelling_rules')!.c;
 const fts = db.get<{ c: number }>('SELECT count(*) as c FROM search_index')!.c;
 const lastIngest = db.get<{ value: string }>('SELECT value FROM db_metadata WHERE key = ?', ['last_ingest']);
 
 db.close();
 
 const coverage = {
-  mcp_name: 'UK Crop Nutrients MCP',
-  jurisdiction: 'GB',
+  mcp_name: 'Sweden Food Safety MCP',
+  jurisdiction: 'SE',
   build_date: lastIngest?.value ?? new Date().toISOString().split('T')[0],
-  crops,
-  soil_types: soils,
-  nutrient_recommendations: recs,
-  commodity_prices: prices,
+  products,
+  product_requirements: requirements,
+  assurance_schemes: schemes,
+  hygiene_rules: hygiene,
+  raw_milk_rules: rawMilk,
+  labelling_rules: labelling,
   fts_entries: fts,
 };
 

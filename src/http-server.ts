@@ -11,13 +11,14 @@ import { createDatabase, type Database } from './db.js';
 import { handleAbout } from './tools/about.js';
 import { handleListSources } from './tools/list-sources.js';
 import { handleCheckFreshness } from './tools/check-freshness.js';
-import { handleSearchCropRequirements } from './tools/search-crop-requirements.js';
-import { handleGetNutrientPlan } from './tools/get-nutrient-plan.js';
-import { handleGetSoilClassification } from './tools/get-soil-classification.js';
-import { handleListCrops } from './tools/list-crops.js';
-import { handleGetCropDetails } from './tools/get-crop-details.js';
-import { handleGetCommodityPrice } from './tools/get-commodity-price.js';
-import { handleCalculateMargin } from './tools/calculate-margin.js';
+import { handleSearchFoodSafety } from './tools/search-food-safety.js';
+import { handleGetProductRequirements } from './tools/get-product-requirements.js';
+import { handleGetTraceabilityRules } from './tools/get-traceability-rules.js';
+import { handleCheckDirectSalesRules } from './tools/check-direct-sales-rules.js';
+import { handleGetLabellingRequirements } from './tools/get-labelling-requirements.js';
+import { handleGetAssuranceSchemeRequirements } from './tools/get-assurance-scheme-requirements.js';
+import { handleGetHygieneRequirements } from './tools/get-hygiene-requirements.js';
+import { handleCheckRawMilkRules } from './tools/check-raw-milk-rules.js';
 
 const SERVER_NAME = 'se-food-safety-mcp';
 const SERVER_VERSION = '0.1.0';
@@ -25,46 +26,50 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 const SearchArgsSchema = z.object({
   query: z.string(),
-  crop_group: z.string().optional(),
+  product_type: z.string().optional(),
   jurisdiction: z.string().optional(),
   limit: z.number().optional(),
 });
 
-const NutrientPlanArgsSchema = z.object({
-  crop: z.string(),
-  soil_type: z.string(),
-  sns_index: z.number().optional(),
-  previous_crop: z.string().optional(),
+const ProductRequirementsArgsSchema = z.object({
+  product: z.string(),
+  sales_channel: z.string().optional(),
   jurisdiction: z.string().optional(),
 });
 
-const SoilArgsSchema = z.object({
-  soil_type: z.string().optional(),
-  texture: z.string().optional(),
+const TraceabilityArgsSchema = z.object({
+  product_type: z.string(),
+  species: z.string().optional(),
   jurisdiction: z.string().optional(),
 });
 
-const ListCropsArgsSchema = z.object({
-  crop_group: z.string().optional(),
+const DirectSalesArgsSchema = z.object({
+  product: z.string(),
+  sales_method: z.string().optional(),
+  volume: z.string().optional(),
   jurisdiction: z.string().optional(),
 });
 
-const CropDetailsArgsSchema = z.object({
-  crop: z.string(),
+const LabellingArgsSchema = z.object({
+  product: z.string(),
   jurisdiction: z.string().optional(),
 });
 
-const PriceArgsSchema = z.object({
-  crop: z.string(),
-  market: z.string().optional(),
+const AssuranceArgsSchema = z.object({
+  scheme: z.string().optional(),
+  product_type: z.string().optional(),
   jurisdiction: z.string().optional(),
 });
 
-const MarginArgsSchema = z.object({
-  crop: z.string(),
-  yield_t_ha: z.number(),
-  price_per_tonne: z.number().optional(),
-  input_costs: z.number().optional(),
+const HygieneArgsSchema = z.object({
+  activity: z.string(),
+  premises_type: z.string().optional(),
+  jurisdiction: z.string().optional(),
+});
+
+const RawMilkArgsSchema = z.object({
+  region: z.string().optional(),
+  sales_method: z.string().optional(),
   jurisdiction: z.string().optional(),
 });
 
@@ -85,95 +90,106 @@ const TOOLS = [
     inputSchema: { type: 'object' as const, properties: {} },
   },
   {
-    name: 'search_crop_requirements',
-    description: 'Search crop nutrient requirements, soil data, and recommendations. Use for broad queries about crops and nutrients.',
+    name: 'search_food_safety',
+    description: 'Search Swedish food safety regulations, product requirements, hygiene rules, and labelling standards. Use for broad queries.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        query: { type: 'string', description: 'Free-text search query' },
-        crop_group: { type: 'string', description: 'Filter by crop group (e.g. cereals, oilseeds)' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
+        query: { type: 'string', description: 'Free-text search query (Swedish or English)' },
+        product_type: { type: 'string', description: 'Filter by product type (e.g. meat, dairy, produce)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
         limit: { type: 'number', description: 'Max results (default: 20, max: 50)' },
       },
       required: ['query'],
     },
   },
   {
-    name: 'get_nutrient_plan',
-    description: 'Get NPK fertiliser recommendation for a specific crop and soil type. Based on AHDB RB209.',
+    name: 'get_product_requirements',
+    description: 'Get food safety requirements for a specific product: temperature control, registration, traceability, labelling. Based on Livsmedelsverket and EU regulations.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        crop: { type: 'string', description: 'Crop ID or name (e.g. winter-wheat)' },
-        soil_type: { type: 'string', description: 'Soil type ID or name (e.g. heavy-clay)' },
-        sns_index: { type: 'number', description: 'Soil Nitrogen Supply index (0-6)' },
-        previous_crop: { type: 'string', description: 'Previous crop group for rotation adjustment' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
+        product: { type: 'string', description: 'Product ID or name (e.g. notkott, agg, mjolk)' },
+        sales_channel: { type: 'string', description: 'Sales channel filter (e.g. retail, direct, export)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
       },
-      required: ['crop', 'soil_type'],
+      required: ['product'],
     },
   },
   {
-    name: 'get_soil_classification',
-    description: 'Get soil group, characteristics, and drainage class for a soil type or texture.',
+    name: 'get_traceability_rules',
+    description: 'Get traceability requirements by product type and species. Covers batch tracking, origin documentation, and supply chain records.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        soil_type: { type: 'string', description: 'Soil type ID or name' },
-        texture: { type: 'string', description: 'Soil texture (e.g. clay, sand, loam)' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
+        product_type: { type: 'string', description: 'Product type (e.g. meat, dairy, produce, honey)' },
+        species: { type: 'string', description: 'Species filter (e.g. bovine, porcine, poultry)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
+      },
+      required: ['product_type'],
+    },
+  },
+  {
+    name: 'check_direct_sales_rules',
+    description: 'Check rules for direct sales (gardsforjsaljning) of food products. Covers farm gate sales, farmers markets, and small-volume exemptions.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        product: { type: 'string', description: 'Product ID or name' },
+        sales_method: { type: 'string', description: 'Sales method (e.g. farm-gate, farmers-market, online)' },
+        volume: { type: 'string', description: 'Volume indication (e.g. small, large)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
+      },
+      required: ['product'],
+    },
+  },
+  {
+    name: 'get_labelling_requirements',
+    description: 'Get mandatory and optional labelling fields for a food product. Covers EU FIC 1169/2011 and Swedish additions.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        product: { type: 'string', description: 'Product name or type (e.g. notkott, honung, brod)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
+      },
+      required: ['product'],
+    },
+  },
+  {
+    name: 'get_assurance_scheme_requirements',
+    description: 'Get details about Swedish food quality and assurance schemes: IP Sigill, KRAV, Svensk Fagel, Fran Sverige, Naturbeteskott.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        scheme: { type: 'string', description: 'Scheme ID or name (e.g. krav, ip-sigill). Omit to list all.' },
+        product_type: { type: 'string', description: 'Filter schemes by product type coverage' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
       },
     },
   },
   {
-    name: 'list_crops',
-    description: 'List all crops in the database, optionally filtered by crop group.',
+    name: 'get_hygiene_requirements',
+    description: 'Get hygiene rules for food activities: slaughter, processing, storage, transport. Covers HACCP, temperature controls, cleaning.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        crop_group: { type: 'string', description: 'Filter by crop group (e.g. cereals)' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
+        activity: { type: 'string', description: 'Food handling activity (e.g. slaughter, processing, storage, transport)' },
+        premises_type: { type: 'string', description: 'Premises type (e.g. slaughterhouse, farm, retail, restaurant)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
       },
+      required: ['activity'],
     },
   },
   {
-    name: 'get_crop_details',
-    description: 'Get full profile for a crop: nutrient offtake, typical yields, growth stages.',
+    name: 'check_raw_milk_rules',
+    description: 'Check Swedish rules for raw (unpasteurised) milk sales. Covers permitted sales methods, herd health requirements, and consumer warnings.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        crop: { type: 'string', description: 'Crop ID or name' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
+        region: { type: 'string', description: 'Region or county (lan) name. Omit for national rules.' },
+        sales_method: { type: 'string', description: 'Sales method filter (e.g. farm-gate, direct)' },
+        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: SE)' },
       },
-      required: ['crop'],
-    },
-  },
-  {
-    name: 'get_commodity_price',
-    description: 'Get latest commodity price for a crop with source attribution. Warns if data is stale (>14 days).',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        crop: { type: 'string', description: 'Crop ID or name' },
-        market: { type: 'string', description: 'Market type (e.g. ex-farm, delivered)' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
-      },
-      required: ['crop'],
-    },
-  },
-  {
-    name: 'calculate_margin',
-    description: 'Estimate gross margin for a crop. Uses current commodity price if price_per_tonne not provided.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        crop: { type: 'string', description: 'Crop ID or name' },
-        yield_t_ha: { type: 'number', description: 'Expected yield in tonnes per hectare' },
-        price_per_tonne: { type: 'number', description: 'Override price (GBP/t). If omitted, uses latest market price.' },
-        input_costs: { type: 'number', description: 'Total input costs per hectare (GBP). Default: 0' },
-        jurisdiction: { type: 'string', description: 'ISO 3166-1 alpha-2 code (default: GB)' },
-      },
-      required: ['crop', 'yield_t_ha'],
     },
   },
 ];
@@ -200,20 +216,22 @@ function registerTools(server: Server, db: Database): void {
           return textResult(handleListSources(db));
         case 'check_data_freshness':
           return textResult(handleCheckFreshness(db));
-        case 'search_crop_requirements':
-          return textResult(handleSearchCropRequirements(db, SearchArgsSchema.parse(args)));
-        case 'get_nutrient_plan':
-          return textResult(handleGetNutrientPlan(db, NutrientPlanArgsSchema.parse(args)));
-        case 'get_soil_classification':
-          return textResult(handleGetSoilClassification(db, SoilArgsSchema.parse(args)));
-        case 'list_crops':
-          return textResult(handleListCrops(db, ListCropsArgsSchema.parse(args)));
-        case 'get_crop_details':
-          return textResult(handleGetCropDetails(db, CropDetailsArgsSchema.parse(args)));
-        case 'get_commodity_price':
-          return textResult(handleGetCommodityPrice(db, PriceArgsSchema.parse(args)));
-        case 'calculate_margin':
-          return textResult(handleCalculateMargin(db, MarginArgsSchema.parse(args)));
+        case 'search_food_safety':
+          return textResult(handleSearchFoodSafety(db, SearchArgsSchema.parse(args)));
+        case 'get_product_requirements':
+          return textResult(handleGetProductRequirements(db, ProductRequirementsArgsSchema.parse(args)));
+        case 'get_traceability_rules':
+          return textResult(handleGetTraceabilityRules(db, TraceabilityArgsSchema.parse(args)));
+        case 'check_direct_sales_rules':
+          return textResult(handleCheckDirectSalesRules(db, DirectSalesArgsSchema.parse(args)));
+        case 'get_labelling_requirements':
+          return textResult(handleGetLabellingRequirements(db, LabellingArgsSchema.parse(args)));
+        case 'get_assurance_scheme_requirements':
+          return textResult(handleGetAssuranceSchemeRequirements(db, AssuranceArgsSchema.parse(args)));
+        case 'get_hygiene_requirements':
+          return textResult(handleGetHygieneRequirements(db, HygieneArgsSchema.parse(args)));
+        case 'check_raw_milk_rules':
+          return textResult(handleCheckRawMilkRules(db, RawMilkArgsSchema.parse(args)));
         default:
           return errorResult(`Unknown tool: ${name}`);
       }

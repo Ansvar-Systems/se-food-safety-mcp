@@ -42,57 +42,73 @@ export function createDatabase(dbPath?: string): Database {
 
 function initSchema(db: BetterSqlite3.Database): void {
   db.exec(`
-    CREATE TABLE IF NOT EXISTS crops (
+    CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      crop_group TEXT NOT NULL,
-      typical_yield_t_ha REAL,
-      nutrient_offtake_n REAL,
-      nutrient_offtake_p2o5 REAL,
-      nutrient_offtake_k2o REAL,
-      growth_stages TEXT,
+      product_type TEXT,
+      species TEXT,
       jurisdiction TEXT NOT NULL DEFAULT 'SE'
     );
 
-    CREATE TABLE IF NOT EXISTS soil_types (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      soil_group INTEGER,
-      texture TEXT,
-      drainage_class TEXT,
-      description TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS nutrient_recommendations (
+    CREATE TABLE IF NOT EXISTS product_requirements (
       id INTEGER PRIMARY KEY,
-      crop_id TEXT REFERENCES crops(id),
-      soil_group INTEGER,
-      sns_index INTEGER,
-      previous_crop_group TEXT,
-      n_rec_kg_ha REAL,
-      p_rec_kg_ha REAL,
-      k_rec_kg_ha REAL,
-      s_rec_kg_ha REAL,
-      notes TEXT,
-      rb209_section TEXT,
+      product_id TEXT REFERENCES products(id),
+      sales_channel TEXT,
+      registration_required INTEGER,
+      approval_required INTEGER,
+      temperature_control TEXT,
+      traceability_requirements TEXT,
+      labelling_requirements TEXT,
+      regulation_ref TEXT,
       jurisdiction TEXT NOT NULL DEFAULT 'SE'
     );
 
-    CREATE TABLE IF NOT EXISTS commodity_prices (
+    CREATE TABLE IF NOT EXISTS assurance_schemes (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      product_types TEXT,
+      standards_summary TEXT,
+      audit_frequency TEXT,
+      cost_indication TEXT,
+      url TEXT,
+      jurisdiction TEXT NOT NULL DEFAULT 'SE'
+    );
+
+    CREATE TABLE IF NOT EXISTS hygiene_rules (
       id INTEGER PRIMARY KEY,
-      crop_id TEXT REFERENCES crops(id),
-      market TEXT,
-      price_per_tonne REAL,
-      currency TEXT DEFAULT 'GBP',
-      price_source TEXT NOT NULL,
-      published_date TEXT,
-      retrieved_at TEXT,
-      source TEXT,
+      activity TEXT NOT NULL,
+      premises_type TEXT,
+      registration_type TEXT,
+      haccp_required INTEGER,
+      temperature_controls TEXT,
+      cleaning_requirements TEXT,
+      regulation_ref TEXT,
+      jurisdiction TEXT NOT NULL DEFAULT 'SE'
+    );
+
+    CREATE TABLE IF NOT EXISTS raw_milk_rules (
+      id INTEGER PRIMARY KEY,
+      region TEXT NOT NULL,
+      permitted INTEGER NOT NULL,
+      sales_methods TEXT,
+      conditions TEXT,
+      warning_label_required INTEGER,
+      regulation_ref TEXT,
+      jurisdiction TEXT NOT NULL DEFAULT 'SE'
+    );
+
+    CREATE TABLE IF NOT EXISTS labelling_rules (
+      id INTEGER PRIMARY KEY,
+      product_type TEXT NOT NULL,
+      field TEXT NOT NULL,
+      mandatory INTEGER NOT NULL,
+      format TEXT,
+      regulation_ref TEXT,
       jurisdiction TEXT NOT NULL DEFAULT 'SE'
     );
 
     CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(
-      title, body, crop_group, jurisdiction
+      title, body, product_type, jurisdiction
     );
 
     CREATE TABLE IF NOT EXISTS db_metadata (
@@ -101,25 +117,25 @@ function initSchema(db: BetterSqlite3.Database): void {
     );
 
     INSERT OR IGNORE INTO db_metadata (key, value) VALUES ('schema_version', '1.0');
-    INSERT OR IGNORE INTO db_metadata (key, value) VALUES ('mcp_name', 'Sweden Crop Nutrients MCP');
+    INSERT OR IGNORE INTO db_metadata (key, value) VALUES ('mcp_name', 'Sweden Food Safety MCP');
     INSERT OR IGNORE INTO db_metadata (key, value) VALUES ('jurisdiction', 'SE');
   `);
 }
 
-const FTS_COLUMNS = ['title', 'body', 'crop_group', 'jurisdiction'];
+const FTS_COLUMNS = ['title', 'body', 'product_type', 'jurisdiction'];
 
 export function ftsSearch(
   db: Database,
   query: string,
   limit: number = 20
-): { title: string; body: string; crop_group: string; jurisdiction: string; rank: number }[] {
+): { title: string; body: string; product_type: string; jurisdiction: string; rank: number }[] {
   const { results } = tieredFtsSearch(db, 'search_index', FTS_COLUMNS, query, limit);
-  return results as { title: string; body: string; crop_group: string; jurisdiction: string; rank: number }[];
+  return results as { title: string; body: string; product_type: string; jurisdiction: string; rank: number }[];
 }
 
 /**
  * Tiered FTS5 search with automatic fallback.
- * Tiers: exact phrase → AND → prefix → stemmed prefix → OR → LIKE
+ * Tiers: exact phrase -> AND -> prefix -> stemmed prefix -> OR -> LIKE
  */
 export function tieredFtsSearch(
   db: Database,
@@ -168,8 +184,8 @@ export function tieredFtsSearch(
     if (results.length > 0) return { tier: 'or', results };
   }
 
-  // Tier 6: LIKE fallback — bypasses FTS, searches base table with real column names
-  const baseCols = ['name', 'crop_group'];
+  // Tier 6: LIKE fallback — bypasses FTS, searches products table
+  const baseCols = ['name', 'product_type'];
   const likeConditions = words.map(() =>
     `(${baseCols.map(c => `${c} LIKE ?`).join(' OR ')})`
   ).join(' AND ');
@@ -178,7 +194,7 @@ export function tieredFtsSearch(
   );
   try {
     const likeResults = db.all<Record<string, unknown>>(
-      `SELECT name as title, COALESCE(growth_stages, '') as body, crop_group, jurisdiction FROM crops WHERE ${likeConditions} LIMIT ?`,
+      `SELECT name as title, COALESCE(species, '') as body, COALESCE(product_type, '') as product_type, jurisdiction FROM products WHERE ${likeConditions} LIMIT ?`,
       [...likeParams, limit]
     );
     if (likeResults.length > 0) return { tier: 'like', results: likeResults };
@@ -203,16 +219,21 @@ function tryFts(
   }
 }
 
+/**
+ * Sanitize FTS input, preserving Swedish characters (a-o-a with diacritics).
+ */
 function sanitizeFtsInput(query: string): string {
   return query
-    .replace(/["""''„‚«»]/g, '"')
-    .replace(/[^a-zA-Z0-9\s*"_-]/g, ' ')
+    .replace(/["\u201C\u201D\u2018\u2019\u201E\u201A\u00AB\u00BB]/g, '"')
+    .replace(/[^a-zA-Z0-9\s*"_\-\u00E5\u00E4\u00F6\u00C5\u00C4\u00D6\u00E9\u00E8\u00FC\u00DF]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 function stemWord(word: string): string {
   return word
+    .replace(/(arna|erna|orna|ingar|ningar)$/i, '')
+    .replace(/(ade|ande|ning|are|are|else|het|isk|igt|lig|tion|ar|er|or|en|et|na|ne)$/i, '')
     .replace(/(ies)$/i, 'y')
     .replace(/(ying|tion|ment|ness|able|ible|ous|ive|ing|ers|ed|es|er|ly|s)$/i, '');
 }
