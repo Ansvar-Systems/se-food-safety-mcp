@@ -8,7 +8,7 @@ Get server metadata: name, version, coverage, data sources, and links.
 
 **Parameters:** None
 
-**Returns:** Server name, version, jurisdiction list, data source names, tool count, homepage/repository links.
+**Returns:** Server name, version, jurisdiction list, data source names (5 sources), tool count, homepage/repository links.
 
 ---
 
@@ -18,7 +18,7 @@ List all data sources with authority, URL, license, and freshness info.
 
 **Parameters:** None
 
-**Returns:** Array of data sources, each with `name`, `authority`, `official_url`, `retrieval_method`, `update_frequency`, `license`, `coverage`, `last_retrieved`.
+**Returns:** Array of sources (Livsmedelsverket, Jordbruksverket, EU 852/2004, EU 853/2004, LIVSFS), each with `name`, `authority`, `official_url`, `retrieval_method`, `update_frequency`, `license`, `coverage`, `last_retrieved`.
 
 ---
 
@@ -28,109 +28,135 @@ Check when data was last ingested, staleness status, and how to trigger a refres
 
 **Parameters:** None
 
-**Returns:** `status` (fresh/stale/unknown), `last_ingest`, `days_since_ingest`, `staleness_threshold_days`, `refresh_command`.
+**Returns:** `status` (fresh/stale/unknown), `last_ingest`, `build_date`, `schema_version`, `days_since_ingest`, `staleness_threshold_days` (90), `refresh_command`.
 
 ---
 
 ## Domain Tools
 
-### `search_crop_requirements`
+### `search_food_safety`
 
-Search crop nutrient requirements, soil data, and recommendations. Use for broad queries about crops and nutrients.
+Full-text search across food safety topics by product type. Uses tiered FTS5 search.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `query` | string | Yes | Free-text search query |
-| `crop_group` | string | No | Filter by crop group (e.g. cereals, oilseeds) |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `query` | string | Yes | Free-text search query (Swedish terms work best) |
+| `product_type` | string | No | Filter by product type (e.g. "dairy", "meat", "eggs") |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
 | `limit` | number | No | Max results (default: 20, max: 50) |
 
-**Example:** `{ "query": "nitrogen winter wheat clay" }`
+**Returns:** `results_count`, array of results with `title`, `body`, `product_type`, `relevance_rank`.
+
+**Example:** `{ "query": "mjolk hygien" }`
 
 ---
 
-### `get_nutrient_plan`
+### `get_product_requirements`
 
-Get NPK fertiliser recommendation for a specific crop and soil type. Based on AHDB RB209.
+Get regulatory requirements for a specific food product by product name/ID and sales channel.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `crop` | string | Yes | Crop ID or name (e.g. winter-wheat) |
-| `soil_type` | string | Yes | Soil type ID or name (e.g. heavy-clay) |
-| `sns_index` | number | No | Soil Nitrogen Supply index (0-6) |
-| `previous_crop` | string | No | Previous crop group for rotation adjustment |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `product` | string | Yes | Product ID or name |
+| `sales_channel` | string | No | Sales channel filter (e.g. "detaljhandel", "gardsforjsaljning") |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
 
-**Returns:** NPK recommendation in kg/ha with RB209 section reference.
+**Returns:** Product details, array of requirements with `sales_channel`, `registration_required`, `approval_required`, `temperature_control`, `traceability_requirements`, `labelling_requirements`, `regulation_ref`.
 
-**Example:** `{ "crop": "winter-wheat", "soil_type": "heavy-clay", "sns_index": 2 }`
+**Example:** `{ "product": "ost", "sales_channel": "gardsforjsaljning" }`
 
 ---
 
-### `get_soil_classification`
+### `get_traceability_rules`
 
-Get soil group, characteristics, and drainage class for a soil type or texture.
+Get traceability requirements by product type and species.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `soil_type` | string | No | Soil type ID or name |
-| `texture` | string | No | Soil texture (e.g. clay, sand, loam) |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `product_type` | string | Yes | Product type (e.g. "dairy", "meat", "eggs", "honey") |
+| `species` | string | No | Species filter (e.g. "cattle", "pig") |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
 
-**Returns:** Soil group number, texture, drainage class, description. If no parameters given, returns all soil types.
+**Returns:** Array of traceability rules with `name`, `product_type`, `species`, `traceability_requirements`, `regulation_ref`, `sales_channel`.
+
+**Example:** `{ "product_type": "meat", "species": "cattle" }`
 
 ---
 
-### `list_crops`
+### `check_direct_sales_rules`
 
-List all crops in the database, optionally filtered by crop group.
+Check farm-gate and direct-to-consumer sales rules for a product (gardsforjsaljning).
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `crop_group` | string | No | Filter by crop group (e.g. cereals) |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `product` | string | Yes | Product ID or name |
+| `sales_method` | string | No | Sales method filter |
+| `volume` | string | No | Volume description for threshold assessment |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
+
+**Returns:** Product details, direct sales requirements (registration, approval, temperature, labelling), plus raw milk cross-reference for dairy products.
+
+**Example:** `{ "product": "mjolk" }`
 
 ---
 
-### `get_crop_details`
+### `get_labelling_requirements`
 
-Get full profile for a crop: nutrient offtake, typical yields, growth stages.
+Get labelling rules for a product type: mandatory and optional fields, formats, regulation references.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `crop` | string | Yes | Crop ID or name |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `product` | string | Yes | Product ID, name, or product type |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
 
-**Returns:** Crop group, typical yield (t/ha), nutrient offtake (N, P2O5, K2O in kg/ha), growth stages.
+**Returns:** Array of labelling rules with `field`, `mandatory` (boolean), `format`, `regulation_ref`, separated into mandatory and optional groups.
+
+**Example:** `{ "product": "honung" }`
 
 ---
 
-### `get_commodity_price`
+### `get_assurance_scheme_requirements`
 
-Get latest commodity price for a crop with source attribution. Warns if data is stale (>14 days).
+Get details on Swedish food quality assurance schemes. Can look up a specific scheme or list all.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `crop` | string | Yes | Crop ID or name |
-| `market` | string | No | Market type (e.g. ex-farm, delivered) |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `scheme` | string | No | Scheme ID or name (omit to list all schemes) |
+| `product_type` | string | No | Filter by product type |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
 
-**Returns:** Price per tonne (GBP), market, source attribution, published date. Includes `staleness_warning` if >14 days old.
+**Returns:** For a specific scheme: `name`, `product_types`, `standards_summary`, `audit_frequency`, `cost_indication`, `url`. For listing: array of all matching schemes.
+
+**Example:** `{ "scheme": "Svenskt Sigill" }`
 
 ---
 
-### `calculate_margin`
+### `get_hygiene_requirements`
 
-Estimate gross margin for a crop. Uses current commodity price if price_per_tonne not provided.
+Get hygiene rules for a specific food handling activity and premises type.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `crop` | string | Yes | Crop ID or name |
-| `yield_t_ha` | number | Yes | Expected yield in tonnes per hectare |
-| `price_per_tonne` | number | No | Override price (GBP/t). If omitted, uses latest market price |
-| `input_costs` | number | No | Total input costs per hectare (GBP). Default: 0 |
-| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: GB) |
+| `activity` | string | Yes | Activity (e.g. "slakt", "forpackning", "tillagning", "forvarning") |
+| `premises_type` | string | No | Premises type filter (e.g. "gard", "mejeri", "restaurang") |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
 
-**Returns:** Revenue/ha, input costs/ha, gross margin/ha, price source.
+**Returns:** Array of rules with `activity`, `premises_type`, `registration_type`, `haccp_required` (boolean), `temperature_controls`, `cleaning_requirements`, `regulation_ref`.
 
-**Example:** `{ "crop": "winter-wheat", "yield_t_ha": 8.5, "input_costs": 520 }`
+**Example:** `{ "activity": "slakt", "premises_type": "gard" }`
+
+---
+
+### `check_raw_milk_rules`
+
+Check raw milk sales rules by region and sales method.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `region` | string | No | Region filter |
+| `sales_method` | string | No | Sales method filter |
+| `jurisdiction` | string | No | ISO 3166-1 alpha-2 code (default: SE) |
+
+**Returns:** Array of rules with `region`, `permitted` (boolean), `sales_methods`, `conditions`, `warning_label_required` (boolean), `regulation_ref`.
+
+**Example:** `{ "region": "hela Sverige" }`

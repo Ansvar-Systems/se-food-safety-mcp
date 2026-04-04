@@ -2,34 +2,49 @@
 
 ## What Is Included
 
-- **Crop nutrient recommendations** from AHDB RB209 (10th Edition): NPK rates by crop, soil type, SNS index, and previous crop
-- **Soil type classifications**: RB209 soil groups 1-3, texture, drainage class
-- **Commodity prices**: Ex-farm and delivered prices from AHDB Market Data and DEFRA Agricultural Price Indices
-- **Crop profiles**: Typical yields, nutrient offtake values, growth stages for major UK arable crops
+- **Product requirements** -- Registration, approval, temperature control, traceability, and labelling requirements by product and sales channel
+- **Hygiene rules** -- Activity-specific hygiene requirements: premises type, registration type, HACCP obligations, temperature controls, cleaning requirements
+- **Labelling rules** -- Mandatory and optional labelling fields by product type with format specifications and regulation references
+- **Raw milk rules** -- Regional rules for raw milk sales: permitted status, sales methods, conditions, warning label requirements
+- **Assurance schemes** -- Swedish quality assurance scheme details: product coverage, standards summaries, audit frequencies, cost indications
+- **Traceability rules** -- Product-type-specific traceability requirements with species and sales channel context
+- **Direct sales rules** -- Farm-gate and direct-to-consumer sales requirements (gardsforjsaljning) including raw milk cross-references
+- **Full-text search** -- Tiered FTS5 search across food safety topics by product type
 
 ## Jurisdictions
 
 | Code | Country | Status |
 |------|---------|--------|
-| GB | Great Britain | Supported |
+| SE | Sweden | Supported |
+
+## Data Sources
+
+| Source | Authority | Coverage |
+|--------|-----------|----------|
+| Livsmedelsverket | Swedish Food Agency | Food safety regulations, hygiene rules, labelling, LIVSFS |
+| Jordbruksverket | Swedish Board of Agriculture | Animal health, raw milk, farm-level food production |
+| EU Regulation 852/2004 | European Commission | General food hygiene requirements |
+| EU Regulation 853/2004 | European Commission | Specific hygiene rules for animal-origin foods |
+| LIVSFS | Livsmedelsverkets forfattningssamling | Swedish food regulation series |
 
 ## What Is NOT Included
 
-- **Organic farming recommendations** -- RB209 covers conventional only
-- **Scotland-specific advice** -- Scottish SRUC equivalents are not yet ingested
-- **Northern Ireland** -- NI follows separate guidance (CAFRE)
-- **Micronutrient recommendations** -- Only N, P, K, and S are covered
-- **Individual field analysis** -- This is reference data, not a precision farming tool
-- **Lime recommendations** -- Separate RB209 section, not yet ingested
-- **Grassland management** -- Focus is arable crops in v0.1.0
-- **Real-time prices** -- Prices are snapshots from the last ingestion run
+- **Feed safety** -- Animal feed regulations are not covered (separate regulatory framework)
+- **Food contact materials** -- Packaging and contact material rules are not included
+- **Novel food approvals** -- EU Novel Food regulation applications not covered
+- **Import/export requirements** -- Focus is domestic production and sales
+- **Allergen management** -- Beyond labelling requirements, allergen risk assessment is not covered
+- **Water quality for food production** -- Dricksvattenforskrifterna not included
+- **Other Nordic countries** -- Sweden only
 
 ## Known Gaps
 
-1. Commodity price data depends on AHDB/DEFRA publication schedule
-2. FTS5 search quality varies with query phrasing -- use specific crop names for best results
-3. SNS index estimation is not included -- users must provide their own SNS assessment
+1. Labelling rules cover common product types but not all LIVSFS product categories
+2. Raw milk rules are region-level; some municipalities may have additional restrictions
+3. Assurance scheme costs are indicative ranges, not current fee schedules
+4. Hygiene requirements are summarised from regulation text, not verbatim
+5. FTS5 search works best with Swedish terms (e.g. "mjolk", "gardsforjsaljning", "markning") rather than English
 
 ## Data Freshness
 
-Run `check_data_freshness` to see when data was last updated. The ingestion pipeline runs on a schedule; manual triggers available via `gh workflow run ingest.yml`.
+Run `check_data_freshness` to see when data was last updated. Staleness threshold is 90 days. Manual refresh: `gh workflow run ingest.yml`.

@@ -3,62 +3,110 @@ import { createDatabase, type Database } from '../../src/db.js';
 export function createSeededDatabase(dbPath: string): Database {
   const db = createDatabase(dbPath);
 
-  // Crops
+  // Products
   db.run(
-    `INSERT INTO crops (id, name, crop_group, typical_yield_t_ha, nutrient_offtake_n, nutrient_offtake_p2o5, nutrient_offtake_k2o, growth_stages, jurisdiction)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['winter-wheat', 'Winter Wheat', 'cereals', 8.0, 192, 70, 46, JSON.stringify(['tillering', 'stem extension', 'ear emergence', 'grain fill']), 'GB']
+    `INSERT INTO products (id, name, product_type, species, jurisdiction)
+     VALUES (?, ?, ?, ?, ?)`,
+    ['prod-001', 'Notkreaturskott', 'meat', 'cattle', 'SE']
   );
   db.run(
-    `INSERT INTO crops (id, name, crop_group, typical_yield_t_ha, nutrient_offtake_n, nutrient_offtake_p2o5, nutrient_offtake_k2o, growth_stages, jurisdiction)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['spring-barley', 'Spring Barley', 'cereals', 5.5, 110, 46, 55, JSON.stringify(['tillering', 'stem extension', 'ear emergence']), 'GB']
+    `INSERT INTO products (id, name, product_type, species, jurisdiction)
+     VALUES (?, ?, ?, ?, ?)`,
+    ['prod-002', 'Obehandlad mjolk', 'dairy', 'cattle', 'SE']
+  );
+  db.run(
+    `INSERT INTO products (id, name, product_type, species, jurisdiction)
+     VALUES (?, ?, ?, ?, ?)`,
+    ['prod-003', 'Honung', 'honey', 'bee', 'SE']
   );
 
-  // Soil types
+  // Product requirements
   db.run(
-    `INSERT INTO soil_types (id, name, soil_group, texture, drainage_class, description)
+    `INSERT INTO product_requirements (product_id, sales_channel, registration_required, approval_required, temperature_control, traceability_requirements, labelling_requirements, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['prod-001', 'detaljhandel', 1, 1, 'Max 7C vid transport och forvarning', 'Sarskilda krav pa batchsparbarhet och ursprungsmarkning', 'Ursprungsland, styckningsanlaggning, hallbarhetsdatum', 'EU 853/2004', 'SE']
+  );
+  db.run(
+    `INSERT INTO product_requirements (product_id, sales_channel, registration_required, approval_required, temperature_control, traceability_requirements, labelling_requirements, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['prod-001', 'gardsforjsaljning', 1, 0, 'Max 7C vid forvarning', 'Notering av forsaljningsdatum och mangd', 'Produktnamn, datum, producent', 'LIVSFS 2005:20', 'SE']
+  );
+  db.run(
+    `INSERT INTO product_requirements (product_id, sales_channel, registration_required, approval_required, temperature_control, traceability_requirements, labelling_requirements, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['prod-002', 'gardsforjsaljning', 1, 0, 'Max 8C inom 2 timmar efter mjolkning', 'Datum och mangd per forsaljningstillfalle', 'Varningstext: obehandlad mjolk', 'LIVSFS 2005:20', 'SE']
+  );
+
+  // Assurance schemes
+  db.run(
+    `INSERT INTO assurance_schemes (id, name, product_types, standards_summary, audit_frequency, cost_indication, url, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['scheme-001', 'Svenskt Sigill', 'meat, dairy, vegetables', 'IP-certifiering for livsmedelssakerhet, djurvalfard, miljo', 'arligen', '5000-15000 SEK/ar', 'https://www.sigill.se/', 'SE']
+  );
+  db.run(
+    `INSERT INTO assurance_schemes (id, name, product_types, standards_summary, audit_frequency, cost_indication, url, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['scheme-002', 'KRAV', 'meat, dairy, vegetables, cereals', 'Ekologisk certifiering - miljo, djurvalfard, halsa', 'arligen', '3000-20000 SEK/ar', 'https://www.krav.se/', 'SE']
+  );
+
+  // Hygiene rules
+  db.run(
+    `INSERT INTO hygiene_rules (activity, premises_type, registration_type, haccp_required, temperature_controls, cleaning_requirements, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['slakt', 'gard', 'registrering hos Livsmedelsverket', 1, 'Max 7C inom 4 timmar', 'Daglig rengoring och desinfektion av utrustning', 'EU 852/2004', 'SE']
+  );
+  db.run(
+    `INSERT INTO hygiene_rules (activity, premises_type, registration_type, haccp_required, temperature_controls, cleaning_requirements, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['forpackning', 'mejeri', 'godkannande av Livsmedelsverket', 1, 'Produktspecifika krav', 'HACCP-baserat rengoringsschema', 'EU 853/2004', 'SE']
+  );
+
+  // Raw milk rules
+  db.run(
+    `INSERT INTO raw_milk_rules (region, permitted, sales_methods, conditions, warning_label_required, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ['hela Sverige', 1, 'Direkt fran gard till konsument', 'Max 70 liter per vecka, kylning inom 2 timmar', 1, 'LIVSFS 2005:20', 'SE']
+  );
+  db.run(
+    `INSERT INTO raw_milk_rules (region, permitted, sales_methods, conditions, warning_label_required, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ['hela Sverige', 0, 'Detaljhandel och restaurang', 'Ej tillatid forsaljning via butik eller servering', 0, 'LIVSFS 2005:20', 'SE']
+  );
+
+  // Labelling rules
+  db.run(
+    `INSERT INTO labelling_rules (product_type, field, mandatory, format, regulation_ref, jurisdiction)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    ['heavy-clay', 'Heavy Clay', 3, 'clay', 'poor', 'Heavy clay soils with poor drainage. Soil group 3 in RB209.']
+    ['meat', 'ursprungsland', 1, 'Text: "Ursprung: [land]"', 'EU 1169/2011', 'SE']
   );
   db.run(
-    `INSERT INTO soil_types (id, name, soil_group, texture, drainage_class, description)
+    `INSERT INTO labelling_rules (product_type, field, mandatory, format, regulation_ref, jurisdiction)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    ['light-sand', 'Light Sand', 1, 'sand', 'free', 'Light sandy soils with free drainage. Soil group 1 in RB209.']
-  );
-
-  // Nutrient recommendations
-  db.run(
-    `INSERT INTO nutrient_recommendations (crop_id, soil_group, sns_index, previous_crop_group, n_rec_kg_ha, p_rec_kg_ha, k_rec_kg_ha, s_rec_kg_ha, notes, rb209_section, jurisdiction)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['winter-wheat', 3, 2, 'cereals', 180, 45, 55, 20, 'Standard recommendation for winter wheat on heavy clay at SNS index 2', 'Section 4', 'GB']
+    ['meat', 'hallbarhetsdatum', 1, '"Sista forbrukningsdag" for farskt kott', 'EU 1169/2011', 'SE']
   );
   db.run(
-    `INSERT INTO nutrient_recommendations (crop_id, soil_group, sns_index, previous_crop_group, n_rec_kg_ha, p_rec_kg_ha, k_rec_kg_ha, s_rec_kg_ha, notes, rb209_section, jurisdiction)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['spring-barley', 1, 3, 'cereals', 100, 40, 50, 15, 'Standard recommendation for spring barley on light sand at SNS index 3', 'Section 4', 'GB']
-  );
-
-  // Commodity prices
-  db.run(
-    `INSERT INTO commodity_prices (crop_id, market, price_per_tonne, currency, price_source, published_date, retrieved_at, source, jurisdiction)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['winter-wheat', 'ex-farm', 195.0, 'GBP', 'ahdb_market', '2026-03-28', '2026-03-29', 'AHDB Cereals & Oilseeds', 'GB']
+    `INSERT INTO labelling_rules (product_type, field, mandatory, format, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    ['honey', 'ursprungsland', 1, 'Text: "Ursprung: [land]" eller "Blandning fran EU/icke-EU"', 'LIVSFS 2003:10', 'SE']
   );
   db.run(
-    `INSERT INTO commodity_prices (crop_id, market, price_per_tonne, currency, price_source, published_date, retrieved_at, source, jurisdiction)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['spring-barley', 'ex-farm', 165.0, 'GBP', 'ahdb_market', '2026-03-28', '2026-03-29', 'AHDB Cereals & Oilseeds', 'GB']
+    `INSERT INTO labelling_rules (product_type, field, mandatory, format, regulation_ref, jurisdiction)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    ['all', 'ingrediensforteckning', 1, 'I fallande ordning efter vikt', 'EU 1169/2011', 'SE']
   );
 
   // FTS5 search index
   db.run(
-    `INSERT INTO search_index (title, body, crop_group, jurisdiction) VALUES (?, ?, ?, ?)`,
-    ['Winter Wheat Nutrient Requirements', 'Winter wheat requires 180 kg/ha nitrogen on heavy clay soils at SNS index 2. RB209 Section 4.', 'cereals', 'GB']
+    `INSERT INTO search_index (title, body, product_type, jurisdiction) VALUES (?, ?, ?, ?)`,
+    ['Notkreaturskott forsaljning', 'Krav pa registrering och godkannande for forsaljning av notkreaturskott. Temperaturkontroll max 7C.', 'meat', 'SE']
   );
   db.run(
-    `INSERT INTO search_index (title, body, crop_group, jurisdiction) VALUES (?, ?, ?, ?)`,
-    ['Spring Barley Nutrient Requirements', 'Spring barley requires 100 kg/ha nitrogen on light sandy soils at SNS index 3. RB209 Section 4.', 'cereals', 'GB']
+    `INSERT INTO search_index (title, body, product_type, jurisdiction) VALUES (?, ?, ?, ?)`,
+    ['Obehandlad mjolk gardsforjsaljning', 'Regler for gardsforjsaljning av obehandlad mjolk. Varningstext obligatorisk.', 'dairy', 'SE']
+  );
+  db.run(
+    `INSERT INTO search_index (title, body, product_type, jurisdiction) VALUES (?, ?, ?, ?)`,
+    ['Honung markning', 'Markningskrav for honung. Ursprungsland obligatoriskt.', 'honey', 'SE']
   );
 
   return db;
