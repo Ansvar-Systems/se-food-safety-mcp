@@ -2,12 +2,13 @@
   "mcp_name": "Sweden Food Safety MCP",
   "jurisdiction": "SE",
   "build_date": "2026-04-04",
-  "products": 32,
-  "product_requirements": 57,
-  "assurance_schemes": 10,
+  "products": 44,
+  "product_requirements": 86,
+  "assurance_schemes": 14,
   "hygiene_rules": 22,
   "raw_milk_rules": 7,
-  "labelling_rules": 30,
-  "fts_entries": 184,
+  "labelling_rules": 36,
+  "fts_entries": 243,
+  "additional_fts_topics": 34,
   "status": "populated"
 }
