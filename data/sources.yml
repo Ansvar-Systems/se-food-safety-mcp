@@ -1,22 +1,66 @@
 schema_version: "1.0"
-mcp_name: "Sweden Crop Nutrients MCP"
+mcp_name: "Sweden Food Safety MCP"
 category: "domain_intelligence"
 
 sources:
-  # TODO: Add Sweden-specific data sources here.
-  # Example:
-  # - name: "National Agriculture Advisory Service"
-  #   authority: "Ministry of Agriculture"
-  #   official_url: "https://example.gov.se/agriculture"
-  #   retrieval_method: "HTML_SCRAPE"
-  #   format: "HTML"
-  #   authentication: "none"
-  #   update_frequency: "annual"
-  #   license:
-  #     type: "Open Government Licence"
-  #     url: "https://example.gov.se/licence"
-  #   coverage:
-  #     scope: "National agricultural data"
-  #   languages:
-  #     - "se"
-  []
+  - name: "Livsmedelsverket (Swedish Food Agency)"
+    authority: "Livsmedelsverket"
+    official_url: "https://www.livsmedelsverket.se"
+    retrieval_method: "MANUAL_CURATION"
+    format: "HTML/PDF"
+    authentication: "none"
+    update_frequency: "as_amended"
+    license:
+      type: "Swedish Government Public Domain"
+      url: "https://www.livsmedelsverket.se"
+    coverage:
+      scope: "LIVSFS regulations, hygiene requirements, labelling rules, direct sales, raw milk, assurance schemes"
+    languages:
+      - "sv"
+
+  - name: "Jordbruksverket (Swedish Board of Agriculture)"
+    authority: "Jordbruksverket"
+    official_url: "https://jordbruksverket.se"
+    retrieval_method: "MANUAL_CURATION"
+    format: "HTML/PDF"
+    authentication: "none"
+    update_frequency: "as_amended"
+    license:
+      type: "Swedish Government Public Domain"
+      url: "https://jordbruksverket.se"
+    coverage:
+      scope: "Animal-origin food regulations, traceability, slaughter requirements"
+    languages:
+      - "sv"
+
+  - name: "EU Regulation 852/2004 (General food hygiene)"
+    authority: "European Union"
+    official_url: "https://eur-lex.europa.eu/eli/reg/2004/852/oj"
+    retrieval_method: "MANUAL_CURATION"
+    format: "HTML"
+    authentication: "none"
+    update_frequency: "as_amended"
+    license:
+      type: "EU public data"
+      url: "https://eur-lex.europa.eu"
+    coverage:
+      scope: "General hygiene rules for food business operators, HACCP requirements"
+    languages:
+      - "en"
+      - "sv"
+
+  - name: "EU Regulation 853/2004 (Animal-origin food hygiene)"
+    authority: "European Union"
+    official_url: "https://eur-lex.europa.eu/eli/reg/2004/853/oj"
+    retrieval_method: "MANUAL_CURATION"
+    format: "HTML"
+    authentication: "none"
+    update_frequency: "as_amended"
+    license:
+      type: "EU public data"
+      url: "https://eur-lex.europa.eu"
+    coverage:
+      scope: "Specific hygiene rules for food of animal origin: meat, dairy, eggs, fishery products"
+    languages:
+      - "en"
+      - "sv"

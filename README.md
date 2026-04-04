@@ -1,27 +1,17 @@
-# Sweden Crop Nutrients MCP
+# Sweden Food Safety MCP
 
-[![CI](https://github.com/ansvar-systems/se-food-safety-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ansvar-systems/se-food-safety-mcp/actions/workflows/ci.yml)
-[![GHCR](https://github.com/ansvar-systems/se-food-safety-mcp/actions/workflows/ghcr-build.yml/badge.svg)](https://github.com/ansvar-systems/se-food-safety-mcp/actions/workflows/ghcr-build.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+Swedish food safety regulations, product requirements, labelling rules, hygiene standards, and traceability requirements. Query Swedish food safety data through the [Model Context Protocol](https://modelcontextprotocol.io).
 
-UK crop nutrient recommendations via the [Model Context Protocol](https://modelcontextprotocol.io). Query AHDB RB209 data, soil types, NPK planning, and commodity prices -- all from your AI assistant.
-
-Part of [Ansvar Open Agriculture](https://ansvar.eu/open-agriculture).
-
-## Why This Exists
-
-Farmers and agronomists need quick access to nutrient recommendation tables, commodity prices, and soil data. This information is published by AHDB and DEFRA but is locked in PDFs, spreadsheets, and web pages that AI assistants cannot query directly. This MCP server makes it all searchable.
+> **Data sources:** Livsmedelsverket (Swedish Food Agency), Jordbruksverket (Swedish Board of Agriculture), EU Regulation 852/2004, EU Regulation 853/2004, LIVSFS. Licensed under applicable Swedish open data terms.
 
 ## Quick Start
 
-### Claude Desktop
-
-Add to `claude_desktop_config.json`:
+### Claude Desktop / Claude Code
 
 ```json
 {
   "mcpServers": {
-    "uk-crop-nutrients": {
+    "se-food-safety": {
       "command": "npx",
       "args": ["-y", "@ansvar/se-food-safety-mcp"]
     }
@@ -29,87 +19,46 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-### Claude Code
-
-```bash
-claude mcp add uk-crop-nutrients npx @ansvar/se-food-safety-mcp
-```
-
-### Streamable HTTP (remote)
+### Streamable HTTP (Docker)
 
 ```
-https://mcp.ansvar.eu/se-crop-nutrients/mcp
+https://mcp.ansvar.eu/se-food-safety/mcp
 ```
-
-### Docker (self-hosted)
-
-```bash
-docker run -p 3000:3000 ghcr.io/ansvar-systems/se-food-safety-mcp:latest
-```
-
-### npm (stdio)
-
-```bash
-npx @ansvar/se-food-safety-mcp
-```
-
-## Example Queries
-
-Ask your AI assistant:
-
-- "What NPK does winter wheat need on heavy clay soil?"
-- "What's the current price of spring barley?"
-- "Calculate gross margin for 8.5 t/ha winter wheat at 520/ha input costs"
-- "What soil group is sandy loam in RB209?"
-- "Search for nitrogen recommendations for oilseed rape"
-
-## Stats
-
-| Metric | Value |
-|--------|-------|
-| Tools | 10 (3 meta + 7 domain) |
-| Jurisdiction | GB |
-| Data sources | AHDB RB209, DEFRA Price Indices, AHDB Market Data |
-| License (data) | Open Government Licence v3 |
-| License (code) | Apache-2.0 |
-| Transport | stdio + Streamable HTTP |
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `about` | Server metadata and links |
-| `list_sources` | Data sources with freshness info |
-| `check_data_freshness` | Staleness status and refresh command |
-| `search_crop_requirements` | FTS5 search across crop and nutrient data |
-| `get_nutrient_plan` | NPK recommendation for crop + soil type |
-| `get_soil_classification` | Soil group and characteristics |
-| `list_crops` | All crops, optionally by group |
-| `get_crop_details` | Full crop profile with nutrient offtake |
-| `get_commodity_price` | Latest price with source attribution |
-| `calculate_margin` | Gross margin estimate |
+| `about` | Get server metadata: name, version, coverage, data sources, and links. |
+| `list_sources` | List all data sources with authority, URL, license, and freshness info. |
+| `check_data_freshness` | Check when data was last ingested, staleness status, and how to trigger a refresh. |
+| `search_food_safety` | Search Swedish food safety regulations, product requirements, hygiene rules, and labelling standards. |
+| `get_product_requirements` | Get food safety requirements for a specific product: temperature, registration, traceability, labelling. |
+| `get_traceability_rules` | Get traceability requirements by product type and species: batch tracking, origin documentation, supply chain records. |
+| `check_direct_sales_rules` | Check rules for direct sales (gardsforjsaljning): farm gate, farmers markets, small-volume exemptions. |
+| `get_labelling_requirements` | Get mandatory and optional labelling fields for a food product per EU FIC 1169/2011 and Swedish additions. |
+| `get_assurance_scheme_requirements` | Get details about Swedish food quality schemes: IP Sigill, KRAV, Svensk Fagel, Fran Sverige, Naturbeteskott. |
+| `get_hygiene_requirements` | Get hygiene rules for food activities: slaughter, processing, storage, transport, HACCP, temperature controls. |
+| `check_raw_milk_rules` | Check Swedish rules for raw (unpasteurised) milk sales: permitted methods, herd health, consumer warnings. |
 
-See [TOOLS.md](TOOLS.md) for full parameter documentation.
+## Example Queries
 
-## Security Scanning
+- "Vilka regler galler for gardsforjsaljning av kott?" (What rules apply to farm-gate meat sales?)
+- "What labelling is required for selling honey at a farmers market in Sweden?"
+- "Vilka hygienregler galler for smakalig slakt?" (What hygiene rules apply to small-scale slaughter?)
+- "What are the KRAV certification requirements for dairy?"
 
-This repository runs 6 security checks on every push:
+## Stats
 
-- **CodeQL** -- static analysis for JavaScript/TypeScript
-- **Gitleaks** -- secret detection across full history
-- **Dependency review** -- via Dependabot
-- **Container scanning** -- via GHCR build pipeline
+| Metric | Value |
+|--------|-------|
+| Jurisdiction | SE (Sweden) |
+| Tools | 11 |
+| Transport | stdio + Streamable HTTP |
+| License | Apache-2.0 |
 
-See [SECURITY.md](SECURITY.md) for reporting policy.
+## Links
 
-## Disclaimer
-
-This tool provides reference data for informational purposes only. It is not professional agricultural advice. See [DISCLAIMER.md](DISCLAIMER.md).
-
-## Contributing
-
-Issues and pull requests welcome. For security vulnerabilities, email security@ansvar.eu (do not open a public issue).
-
-## License
-
-Apache-2.0. Data sourced under Open Government Licence v3.
+- [Ansvar MCP Network](https://ansvar.eu/open-agriculture)
+- [GitHub](https://github.com/ansvar-systems/se-food-safety-mcp)
+- [All Swedish Agriculture MCPs](https://mcp.ansvar.eu)
