@@ -1,3 +1,4 @@
+import { buildCitation } from '../citation.js';
 import { buildMeta } from '../metadata.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
@@ -49,6 +50,7 @@ export function handleGetHygieneRequirements(db: Database, args: HygieneArgs) {
       cleaning_requirements: r.cleaning_requirements,
       regulation_ref: r.regulation_ref,
     })),
+    _citation: buildCitation(`SE hygiene requirements — ${args.activity ?? ''}`, `hygiene requirements (${args.activity ?? ''})`, 'get_hygiene_requirements', { activity: String(args.activity ?? '') }, 'https://www.livsmedelsverket.se/'),
     _meta: buildMeta({ source_url: 'https://www.livsmedelsverket.se/' }),
   };
 }

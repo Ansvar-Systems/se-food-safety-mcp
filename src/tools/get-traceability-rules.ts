@@ -1,3 +1,4 @@
+import { buildCitation } from '../citation.js';
 import { buildMeta } from '../metadata.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
@@ -71,6 +72,7 @@ function formatResult(
       traceability_requirements: r.traceability_requirements,
       regulation_ref: r.regulation_ref,
     })),
+    _citation: buildCitation(`SE traceability rules — ${productType}`, `traceability rules (${productType})`, 'get_traceability_rules', { product_type: productType }, 'https://www.livsmedelsverket.se/'),
     _meta: buildMeta({ source_url: 'https://www.livsmedelsverket.se/' }),
   };
 }

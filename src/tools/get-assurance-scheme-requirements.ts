@@ -1,3 +1,4 @@
+import { buildCitation } from '../citation.js';
 import { buildMeta } from '../metadata.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
@@ -37,6 +38,7 @@ export function handleGetAssuranceSchemeRequirements(db: Database, args: Assuran
       cost_indication: scheme.cost_indication,
       url: scheme.url,
       jurisdiction: jv.jurisdiction,
+      _citation: buildCitation(`SE assurance scheme — ${scheme.name}`, `assurance scheme requirements (${scheme.name})`, 'get_assurance_scheme_requirements', { scheme: scheme.id }, scheme.url ?? 'https://www.livsmedelsverket.se/'),
       _meta: buildMeta({ source_url: scheme.url ?? 'https://www.livsmedelsverket.se/' }),
     };
   }
@@ -70,6 +72,7 @@ export function handleGetAssuranceSchemeRequirements(db: Database, args: Assuran
       cost_indication: s.cost_indication,
       url: s.url,
     })),
+    _citation: buildCitation(`SE assurance schemes${args.product_type ? ` — ${args.product_type}` : ''}`, `assurance schemes (${args.product_type ?? 'all'})`, 'get_assurance_scheme_requirements', { product_type: String(args.product_type ?? '') }),
     _meta: buildMeta(),
   };
 }
