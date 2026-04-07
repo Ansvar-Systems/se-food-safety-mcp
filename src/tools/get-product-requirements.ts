@@ -1,3 +1,4 @@
+import { buildCitation } from '../citation.js';
 import { buildMeta } from '../metadata.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
@@ -62,6 +63,7 @@ export function handleGetProductRequirements(db: Database, args: ProductRequirem
       labelling_requirements: r.labelling_requirements,
       regulation_ref: r.regulation_ref,
     })),
+    _citation: buildCitation(`SE product requirements — ${args.product ?? ''}`, `product requirements (${args.product ?? ''})`, 'get_product_requirements', { product: String(args.product ?? '') }, 'https://www.livsmedelsverket.se/'),
     _meta: buildMeta({ source_url: 'https://www.livsmedelsverket.se/' }),
   };
 }

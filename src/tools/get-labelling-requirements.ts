@@ -1,3 +1,4 @@
+import { buildCitation } from '../citation.js';
 import { buildMeta } from '../metadata.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
@@ -80,6 +81,7 @@ function formatResult(
       regulation_ref: r.regulation_ref,
     })),
     total_rules: rules.length,
+    _citation: buildCitation(`SE labelling requirements — ${productName ?? productType}`, `labelling requirements (${productName ?? productType})`, 'get_labelling_requirements', { product: productType }, 'https://www.livsmedelsverket.se/'),
     _meta: buildMeta({ source_url: 'https://www.livsmedelsverket.se/' }),
   };
 }
